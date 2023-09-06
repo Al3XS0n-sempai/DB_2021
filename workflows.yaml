@@ -1,0 +1,97 @@
+comment: 'Running main workflow with initial steps'
+before_all:
+  - comment: 'Install dependencies'
+    subtasks:
+      - type: 'shell'
+        file_location: './project/install.sh'
+before_each:
+  - comment: 'Echo hello in console'
+    subtasks:
+      - type: 'shell'
+        file_location: './project/scripts/bash/hello.sh'
+main_tasks:
+  - comment: 'Echo hello'
+    subtasks:
+      - type: 'shell'
+        file_location: './project/scripts/bash/hello.sh'
+  - comment: 'Init of DB'
+    subtasks:
+      - type: 'complex_sql'
+        file_location: './project/sql/ddl.sql'
+      - type: 'complex_sql'
+        file_location: './project/sql/insert.sql'
+  - comment: 'CRUD queries'
+    subtasks:
+      - type: 'simple_sql'
+        file_location: './project/sql/crud.sql'
+  - comment: 'SELECT queries перед каждым запросом есть описание, так же можно посмотреть в README \n
+              1) Должен вернуть название всех книг(book) жанра "Роман", выпущенные до 2000 года \n
+              2) Должен вернуть названия всех произведений информация о которых отсутствует в supply_content \n
+              3) Должен посчитать количество произведений каждого жанра и вывести их в порядке увелчения номера жанра. \n
+              4) Должен вернуть сумаруню цену всез книг в каждом магазине. \n
+              5) Должен вернуть самых популярных доставщиков(самое большое количество поставок) \n
+              6) Должен вернуть самых широко предстваленных авторов'
+    subtasks:
+      - type: 'simple_sql'
+        file_location: './project/sql/select.sql'
+  - comment: 'Index, перед каждым запросом есть описание, так же можно посмотреть в README
+              1) В таблице author, по столбцу author_nm, т.к. в основном нам удобнее искать информацию по имени автора
+              2) В таблице book, по столбцу publishing_dt, т.к. самая комплексная фильтрация будет по дате, остальное просто индексы
+              3) В таблице deliverman, по столбцу id. Единственный информативный столбец по которому можно делать поиск.
+              4) В таблице genre, по столбцу genre_nm, т.к. по имени намного удобнее делать фильтрацию чем по id.
+              5) В таблице product, по столбцам shop_id, book_id, т.к. чаще всего фильтрация будет по магазинам или книгам.
+              6) В таблице publisher, по столбцу id, т.к. во всех запросах будет отсеивание по id.
+              7) В таблице shop, по столбцу id, т.к. для фильтрации опять таки будет использоваться id магазина.
+              8) В таблице supply, по столбцу deliverman_id, чаще всего будет интересно какие поставки были от какого доставщика.
+              9) В таблице supply_content, по столбцам supply_id и product_id, других стольцов нет, а делать по одному из них не имеет смысла т.к. столбцы равнозначны
+              10) В таблице work, по столбцам author_id и genre_id, т.к. нас интересуют работы от каких то авторов или каких-то жанров.'
+    subtasks:
+      - type: 'simple_sql'
+        file_location: './project/sql/index.sql'
+  - comment: 'VIEW Представления, дополнительная информация перед каждым запросом, здесь и в README
+              1) Представляет собой сводную таблицу по поставкам(id поставки, что поставляли, кому и кто был доставщиком)
+              2) Статистика по магазинам(количество товара, сумарная стоимость представленного товара)
+              3) Статистика по жанрам (название, сколько экзепляров работ этого жанра)
+              4) Статистика по издателям(id, название издателя, количество напечатанных экзепляров, суммарная цена всех напечатанных экземпляров)
+              5) Таблица состаящая из названия произведения и типа цены(дешевая < $400 или дорагая >= $400). При этом сама цена не хранится(сокрытие)
+              6) Представляет собой некую сборную информацию об авторе(имя, пример работы, и страна). Причем страна может принимать значение либо Россия, либо Зарубежный(такое вот цензурное сокрытие)'
+    subtasks:
+      - type: 'simple_sql'
+        file_location: './project/sql/view.sql'
+  - comment: 'Procedures процедуры, дополнительная информация перед каждым запросом, здесь и в README
+              1) buy_book(купить книгу)
+                  Аргументы:
+                      1) product_id - id продукта
+                      2) cnt - количество сколько покупаем
+                  Семантика, если экземпляров product_id хватает для покупки, то покупаем.
+                  Иначе ничего не делаем.
+                  Реализация такова, что можно добавлять новые экземпляры в product_id,
+                  если cnt отрицательный, то есть:
+                      buy_book(10, -100) = добавить 100 экземпляров книг с product_id = 10
+              2) add_new_work(Добавить новое произведение)
+                  Аргументы:
+                      1) _work_nm VARCHAR(100) - название
+                      2) _author_id INT - id автора
+                      3) _genre_id INT - id жанра
+                      4) _work_id INT - id нового произведения(по умолчанию -1)
+                  Семантика, создаем новое произведение в таблице с заданными значениями
+                  Если _work_id не указан то берется максимальный уже существующий и прибавляется 1'
+    subtasks:
+      - type: 'complex_sql'
+        file_location: './project/sql/procedures.sql'
+after_each:
+  - comment: 'Echo goodbye in console'
+    subtasks:
+      - type: 'shell'
+        file_location: './project/scripts/bash/goodbye.sh'
+
+---
+
+comment: 'No queries, only shell scripts'
+main_tasks:
+  - comment: 'Echo hello and goodbye'
+    subtasks:
+      - type: 'shell'
+        file_location: './project/scripts/bash/hello.sh'
+      - type: 'shell'
+        file_location: './project/scripts/bash/goodbye.sh'
